@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nhà kính nhom01</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --ink: #1c2230; --muted: #667085; --line: #e3e6ec;
+    --ok: #1a7f4b; --warn: #b45309; --bad: #c0392b; --accent: #2563eb;
+    --temp: #e0662b; --hum: #2563eb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #12151c; --card: #1b2029; --ink: #e8ebf2; --muted: #98a1b3; --line: #2b323f;
+            --ok: #4cc38a; --warn: #f0a04b; --bad: #ff7b6b; --accent: #6ea0ff; --temp: #ff9a62; --hum: #6ea0ff; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 20px 16px 40px; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  h1 { font-size: 20px; margin: 0; }
+  .status { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+  .dot.on { background: var(--ok); } .dot.bad { background: var(--bad); } .dot.warn { background: var(--warn); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  form.conn { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; align-items: end; margin-bottom: 16px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  input { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+          background: var(--bg); color: var(--ink); font: inherit; }
+  button { padding: 9px 14px; border: 0; border-radius: 8px; background: var(--accent); color: #fff;
+           font: inherit; font-weight: 600; cursor: pointer; }
+  button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  button:disabled { opacity: .5; cursor: default; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 12px; }
+  .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .v { font-size: 34px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .v small { font-size: 16px; font-weight: 500; color: var(--muted); margin-left: 3px; }
+  .v.text { font-size: 24px; }
+  .sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .null { color: var(--bad); }
+  .chartbox { margin-bottom: 12px; }
+  .legend { display: flex; gap: 16px; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
+  svg { width: 100%; height: 220px; display: block; }
+  .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+  .bar > div { height: 100%; width: 0; background: var(--accent); transition: width .5s; }
+  .bar > div.done { background: var(--ok); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; }
+  .tools { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .note { font-size: 12px; color: var(--muted); margin-top: 10px; }
+  .err { color: var(--bad); font-size: 13px; min-height: 18px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Nhà kính nhom01 · node01</h1>
+    <span class="status"><span class="dot" id="dot"></span><span id="stext">Chưa kết nối</span></span>
+  </header>
+
+  <form class="conn card" id="form">
+    <div><label>Địa chỉ broker (IP máy chạy Docker)</label><input id="host" value="172.16.50.112"></div>
+    <div><label>Cổng WebSocket</label><input id="port" value="9001"></div>
+    <div><label>Tài khoản</label><input id="user" value="observer" autocomplete="username"></div>
+    <div><label>Mật khẩu</label><input id="pass" type="password" autocomplete="current-password"></div>
+    <div><label>Topic</label><input id="topic" value="nhom01/node01/telemetry"></div>
+    <div><label>Chu kỳ gửi (giây)</label><input id="period" value="2"></div>
+    <div style="display:flex;gap:8px"><button type="submit" id="btnc">Kết nối</button>
+         <button type="button" class="ghost" id="btnd" disabled>Ngắt</button></div>
+  </form>
+  <div class="err" id="err"></div>
+
+  <div class="grid">
+    <div class="card"><div class="k">Nhiệt độ</div><div class="v" id="temp">–</div><div class="sub" id="tempsub">&nbsp;</div></div>
+    <div class="card"><div class="k">Độ ẩm</div><div class="v" id="hum">–</div><div class="sub">%RH</div></div>
+    <div class="card"><div class="k">Mưa</div><div class="v text" id="rain">–</div><div class="sub" id="validsub">&nbsp;</div></div>
+    <div class="card"><div class="k">Cập nhật cuối</div><div class="v text" id="last">–</div><div class="sub" id="ago">&nbsp;</div></div>
+  </div>
+
+  <div class="card chartbox">
+    <div class="legend"><span><i style="background:var(--temp)"></i>Nhiệt độ (°C)</span><span><i style="background:var(--hum)"></i>Độ ẩm (%)</span></div>
+    <svg id="chart" viewBox="0 0 800 220" preserveAspectRatio="none"></svg>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="k">Số bản tin nhận</div><div class="v" id="count">0</div><div class="sub" id="rate">&nbsp;</div></div>
+    <div class="card"><div class="k">Bản tin có thể bị rớt</div><div class="v" id="lost">0</div><div class="sub" id="lostsub">dựa vào khoảng trống của <code>ts</code></div></div>
+    <div class="card"><div class="k">Lỗi cảm biến (null)</div><div class="v" id="nulls">0</div><div class="sub">bản tin có temp = null</div></div>
+    <div class="card"><div class="k">Thời gian ghi nhận</div><div class="v text" id="elapsed">00:00</div>
+      <div class="bar"><div id="prog"></div></div><div class="sub" id="progsub">mục tiêu ≥ 10 phút</div></div>
+  </div>
+
+  <div class="card">
+    <div class="k" style="margin-bottom:8px">20 bản tin gần nhất</div>
+    <table><thead><tr><th>Giờ nhận</th><th>ts (ms)</th><th>Nhiệt độ</th><th>Độ ẩm</th><th>Mưa</th><th>valid</th></tr></thead>
+    <tbody id="rows"></tbody></table>
+    <div class="tools">
+      <button class="ghost" id="btndl" disabled>Tải log (.txt)</button>
+      <button class="ghost" id="btnclr" disabled>Xóa dữ liệu</button>
+    </div>
+    <div class="note">File log tải về có cùng định dạng với <code>mosquitto_sub -v</code> (mỗi dòng: topic rồi payload) nên dùng được với <code>tools/check_log.py</code>.
+      Trang này chỉ để quan sát. Đề yêu cầu log nộp phải lấy bằng <code>mosquitto_sub</code> trên máy khác.</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var client = null, rows = [], logLines = [], pts = [];
+  var count = 0, lost = 0, nulls = 0, firstTs = null, lastTs = null, firstAt = null, lastAt = null, recent = [];
+  var MAXPTS = 150;
+
+  function setStatus(kind, text) {
+    $("dot").className = "dot " + (kind || ""); $("stext").textContent = text;
+  }
+  function fmtTime(d) { return d.toLocaleTimeString("vi-VN", { hour12: false }); }
+  function mmss(sec) { sec = Math.max(0, Math.floor(sec)); return String(Math.floor(sec / 60)).padStart(2, "0") + ":" + String(sec % 60).padStart(2, "0"); }
+  function num(v, unit) {
+    if (v === null || v === undefined) return '<span class="null">null</span>';
+    return v.toFixed(1) + (unit ? "<small>" + unit + "</small>" : "");
+  }
+
+  function reset() {
+    rows = []; logLines = []; pts = []; recent = [];
+    count = 0; lost = 0; nulls = 0; firstTs = lastTs = firstAt = lastAt = null;
+    $("rows").innerHTML = "";
+    ["temp", "hum", "rain", "last"].forEach(function (k) { $(k).textContent = "–"; });
+    $("tempsub").innerHTML = "&nbsp;"; $("validsub").innerHTML = "&nbsp;"; $("ago").innerHTML = "&nbsp;";
+    render(); drawChart();
+  }
+
+  function onMessage(topic, payload) {
+    var text = payload.toString(), now = new Date(), p;
+    logLines.push(topic + " " + text);
+    try { p = JSON.parse(text); } catch (e) { return; }
+    if (typeof p.ts !== "number") return;
+    var period = (parseFloat($("period").value) || 2) * 1000;
+    if (lastTs !== null && p.ts > lastTs) {
+      var gap = p.ts - lastTs;
+      if (gap > 1.5 * period) { lost += Math.round(gap / period) - 1; }
+    }
+    if (firstTs === null) { firstTs = p.ts; firstAt = now; }
+    lastTs = p.ts; lastAt = now; count++;
+    recent.push(now.getTime());
+    if (p.temp === null) nulls++;
+
+    $("temp").innerHTML = num(p.temp, "°C");
+    $("hum").innerHTML = num(p.hum, "%");
+    var r = $("rain");
+    if (p.rain === null) { r.innerHTML = '<span class="null">null</span>'; }
+    else { r.textContent = p.rain ? "Đang mưa" : "Không mưa"; }
+    $("validsub").innerHTML = p.valid ? '<span style="color:var(--ok)">dữ liệu hợp lệ</span>' : '<span class="null">dữ liệu lỗi (valid=false)</span>';
+    $("tempsub").textContent = "node: " + p.device_id;
+    $("last").textContent = fmtTime(now);
+
+    rows.unshift({ t: fmtTime(now), p: p }); if (rows.length > 20) rows.pop();
+    pts.push({ temp: p.temp, hum: p.hum }); if (pts.length > MAXPTS) pts.shift();
+    render(); drawChart();
+    $("btndl").disabled = false; $("btnclr").disabled = false;
+  }
+
+  function render() {
+    $("count").textContent = count;
+    $("lost").textContent = lost; $("lost").style.color = lost ? "var(--warn)" : "";
+    $("nulls").textContent = nulls;
+    var cutoff = Date.now() - 60000; recent = recent.filter(function (t) { return t >= cutoff; });
+    $("rate").textContent = recent.length + " bản tin / 60 giây gần nhất";
+    var html = rows.map(function (r) {
+      var p = r.p;
+      return "<tr><td>" + r.t + "</td><td>" + p.ts + "</td><td>" + (p.temp === null ? '<span class="null">null</span>' : p.temp.toFixed(1) + " " + (p.unit || "")) +
+        "</td><td>" + (p.hum === null ? '<span class="null">null</span>' : p.hum.toFixed(1)) + "</td><td>" +
+        (p.rain === null ? '<span class="null">null</span>' : (p.rain ? "có" : "không")) + "</td><td>" + p.valid + "</td></tr>";
+    }).join("");
+    $("rows").innerHTML = html;
+  }
+
+  function drawChart() {
+    var svg = $("chart"), W = 800, H = 220, padL = 36, padR = 8, padT = 10, padB = 18;
+    var s = "";
+    for (var g = 0; g <= 4; g++) {
+      var y = padT + (H - padT - padB) * g / 4;
+      s += '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y + '" y2="' + y + '" stroke="var(--line)" stroke-width="1"/>';
+      s += '<text x="4" y="' + (y + 4) + '" font-size="11" fill="var(--muted)">' + (100 - g * 25) + '</text>';
+    }
+    function line(key, color) {
+      if (!pts.length) return "";
+      var d = "", pen = false;
+      pts.forEach(function (pt, i) {
+        var v = pt[key];
+        if (v === null || v === undefined) { pen = false; return; }
+        var x = padL + (W - padL - padR) * (pts.length === 1 ? 0 : i / (MAXPTS - 1));
+        var y = padT + (H - padT - padB) * (1 - Math.min(Math.max(v, 0), 100) / 100);
+        d += (pen ? "L" : "M") + x.toFixed(1) + " " + y.toFixed(1) + " "; pen = true;
+      });
+      return '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2" vector-effect="non-scaling-stroke"/>';
+    }
+    s += line("hum", "var(--hum)") + line("temp", "var(--temp)");
+    svg.innerHTML = s;
+  }
+
+  setInterval(function () {
+    if (lastAt) {
+      var ago = (Date.now() - lastAt.getTime()) / 1000;
+      var period = parseFloat($("period").value) || 2;
+      $("ago").textContent = ago < 1 ? "vừa nhận" : Math.floor(ago) + " giây trước";
+      if (client && client.connected) {
+        if (ago > 3 * period) setStatus("warn", "Đã kết nối broker, nhưng node không gửi " + Math.floor(ago) + " giây");
+        else setStatus("on", "Đang nhận dữ liệu");
+      }
+      var el = (lastAt.getTime() - firstAt.getTime()) / 1000;
+      $("elapsed").textContent = mmss(el);
+      var pct = Math.min(100, el / 600 * 100);
+      $("prog").style.width = pct + "%"; $("prog").className = pct >= 100 ? "done" : "";
+      $("progsub").textContent = pct >= 100 ? "đã đủ 10 phút" : "mục tiêu ≥ 10 phút (" + Math.floor(pct) + "%)";
+    }
+    render();
+  }, 1000);
+
+  function disconnect() { if (client) { client.end(true); client = null; } $("btnc").disabled = false; $("btnd").disabled = true; setStatus("", "Chưa kết nối"); }
+
+  $("form").addEventListener("submit", function (e) {
+    e.preventDefault(); $("err").textContent = "";
+    if (typeof mqtt === "undefined") { $("err").textContent = "Không tải được thư viện mqtt.js (cần Internet cho lần mở trang này)."; return; }
+    if (client) client.end(true);
+    reset();
+    var url = "ws://" + $("host").value.trim() + ":" + $("port").value.trim();
+    setStatus("warn", "Đang kết nối " + url + " ...");
+    client = mqtt.connect(url, {
+      username: $("user").value, password: $("pass").value,
+      clientId: "dash-" + Math.random().toString(16).slice(2, 8), reconnectPeriod: 3000, connectTimeout: 6000
+    });
+    $("btnc").disabled = true; $("btnd").disabled = false;
+    client.on("connect", function () {
+      setStatus("on", "Đã kết nối broker, đang chờ dữ liệu");
+      client.subscribe($("topic").value.trim(), function (err) { if (err) $("err").textContent = "Không subscribe được: " + err.message; });
+    });
+    client.on("message", onMessage);
+    client.on("reconnect", function () { setStatus("warn", "Mất kết nối, đang thử lại..."); });
+    client.on("close", function () { if (client && !client.connected) setStatus("bad", "Mất kết nối broker"); });
+    client.on("error", function (err) {
+      $("err").textContent = "Lỗi: " + err.message + " (kiểm tra IP, cổng 9001, tường lửa, tài khoản)";
+    });
+  });
+  $("btnd").addEventListener("click", disconnect);
+  $("btnclr").addEventListener("click", function () { reset(); $("btndl").disabled = true; $("btnclr").disabled = true; });
+  $("btndl").addEventListener("click", function () {
+    var blob = new Blob([logLines.join("\n") + "\n"], { type: "text/plain;charset=utf-8" });
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "log_dashboard.txt";
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+  drawChart();
+})();
+</script>
+</body>
+</html>

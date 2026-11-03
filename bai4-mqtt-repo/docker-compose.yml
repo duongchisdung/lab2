@@ -1,0 +1,20 @@
+services:
+  broker:
+    image: eclipse-mosquitto:2
+    container_name: nhom01-broker
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"   # WebSocket cho dashboard.html
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      # File passwd nằm trong volume Docker mosq_auth, sinh từ biến môi trường bởi
+      # setup_broker.sh (hoặc lệnh trong README). KHÔNG commit mật khẩu vào repo.
+      - mosq_auth:/mosquitto/auth:ro
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+
+volumes:
+  mosq_auth:
+    external: true
+    name: mosq_auth
