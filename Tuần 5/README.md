@@ -28,7 +28,7 @@ Cùng một câu truy vấn, chạy ở hai thời điểm, kết quả **trùng
 | `suspect = 1` | 1 (`seq=88`) | 1 |
 | `seq` | 1 … 120, không thiếu | 1 … 120, không thiếu |
 
-![alt text](image.png)
+
 
 
 <summary>log<summary>
