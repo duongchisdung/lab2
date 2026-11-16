@@ -32,19 +32,9 @@ Cùng một câu truy vấn, chạy ở hai thời điểm, kết quả **trùng
 
 
 <summary>log<summary>
+<img width="1010" height="536" alt="image" src="https://github.com/user-attachments/assets/b4e645e1-871b-41e8-b327-d16fd9b45e6a" />
 
-```text
-id=1    device_id=node02 ts=1794811330 seq=1    temp=30.1   hum=68.3   rain=0 valid=1 suspect=0
-id=2    device_id=node02 ts=1794811331 seq=2    temp=29.8   hum=71.8   rain=0 valid=1 suspect=0
-id=3    device_id=node02 ts=1794811332 seq=3    temp=32.0   hum=65.5   rain=0 valid=1 suspect=0
-...
-id=47   device_id=node02 ts=1794811376 seq=47   temp=null   hum=null   rain=0 valid=0 suspect=0   <-- cảm biến lỗi
-...
-id=88   device_id=node02 ts=1794811417 seq=88   temp=-18.4  hum=103.2  rain=0 valid=1 suspect=1   <-- ngoài dải
-...
-id=120  device_id=node02 ts=1794811449 seq=120  temp=31.0   hum=72.6   rain=0 valid=1 suspect=0
--- Tổng: 120 bản ghi
-```
+
 
 
 Câu truy vấn dùng cho cả hai lần:
