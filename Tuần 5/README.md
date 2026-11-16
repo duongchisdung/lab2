@@ -131,8 +131,6 @@ python restart_check.py
 python concurrent_load_selftest.py
 ```
 
-Nạp firmware bằng PlatformIO (sửa Wi-Fi/IP broker trong `include/config.h`). Xem biểu đồ trực tiếp tại `http://<IP_ESP32>/`, bấm **📸 Xuất & Tải chart.png**, hoặc mở `http://<IP_ESP32>/?auto_export=1` để tự tải.
-
 Kết quả chạy `query_timerange.py`:
 ```text
 Truy vấn: device=node02  T0=2026-11-16T06:42:10Z  T1=2026-11-16T06:44:09Z
