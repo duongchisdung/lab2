@@ -6,7 +6,7 @@
 
 ![Biểu đồ telemetry node02](chart.png)
 
-*Phiên đo 16/11/2026, 06:42:10 → 06:44:09 UTC (120 mẫu, 1 mẫu/giây).*
+
 
 | Ký hiệu trên biểu đồ | Ý nghĩa | Vị trí |
 |---|---|---|
