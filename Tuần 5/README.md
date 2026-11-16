@@ -30,8 +30,8 @@ Cùng một câu truy vấn, chạy ở hai thời điểm, kết quả **trùng
 
 ![alt text](image.png)
 
-<details>
-<summary>Trích đoạn log (bấm để mở)</summary>
+
+<summary>log<summary>
 
 ```text
 id=1    device_id=node02 ts=1794811330 seq=1    temp=30.1   hum=68.3   rain=0 valid=1 suspect=0
@@ -45,7 +45,7 @@ id=88   device_id=node02 ts=1794811417 seq=88   temp=-18.4  hum=103.2  rain=0 va
 id=120  device_id=node02 ts=1794811449 seq=120  temp=31.0   hum=72.6   rain=0 valid=1 suspect=0
 -- Tổng: 120 bản ghi
 ```
-</details>
+
 
 Câu truy vấn dùng cho cả hai lần:
 ```sql
