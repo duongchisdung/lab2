@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Greenhouse Dashboard</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --card: #1f2937;
+        --muted: #94a3b8;
+        --text: #e2e8f0;
+        --brand: #38bdf8;
+        --ok: #34d399;
+        --warn: #fbbf24;
+        --err: #f87171;
+        --shadow: rgba(15, 23, 42, 0.55);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(180deg, #020817 0%, #0f172a 100%);
+        color: var(--text);
+      }
+      .wrap {
+        max-width: 1100px;
+        margin: 32px auto;
+        padding: 24px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .card {
+        background: rgba(17,24,39,0.88);
+        border: 1px solid rgba(148,163,184,0.2);
+        border-radius: 16px;
+        box-shadow: 0 10px 28px var(--shadow);
+        padding: 20px;
+      }
+      .metric {
+        background: rgba(31,41,55,0.95);
+        border-radius: 14px;
+        padding: 16px;
+      }
+      .metric .label {
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .metric .value {
+        margin-top: 10px;
+        font-size: 2rem;
+        font-weight: 700;
+      }
+      .banner {
+        display: none;
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-bottom: 18px;
+        font-weight: 600;
+      }
+      .banner.stale {
+        display: block;
+        background: rgba(251, 191, 36, 0.12);
+        border: 1px solid rgba(251, 191, 36, 0.5);
+        color: #fde68a;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 12px;
+      }
+      input, select, button {
+        border-radius: 10px;
+        border: 1px solid rgba(148,163,184,0.35);
+        padding: 12px 14px;
+        font-size: 1rem;
+      }
+      input, select {
+        background: rgba(15, 23, 42, 0.9);
+        color: var(--text);
+      }
+      button {
+        background: var(--brand);
+        color: #082f49;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button:hover { filter: brightness(1.1); }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-weight: 700;
+        margin-top: 10px;
+      }
+      .badge.pending { background: rgba(59,130,246,0.15); color: #93c5fd; }
+      .badge.confirmed { background: rgba(52,211,153,0.12); color: #a7f3d0; }
+      .badge.timeout { background: rgba(251,191,36,0.12); color: #fde68a; }
+      .badge.denied { background: rgba(248,113,113,0.12); color: #fca5a5; }
+      .status-box {
+        margin-top: 16px;
+        padding: 12px 14px;
+        background: rgba(15,23,42,0.75);
+        border: 1px solid rgba(148,163,184,0.18);
+        border-radius: 12px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 14px;
+      }
+      th, td {
+        text-align: left;
+        padding: 10px 8px;
+        border-bottom: 1px solid rgba(148,163,184,0.18);
+      }
+      th { color: var(--muted); }
+      .muted { color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <h2>Giám sát thiết bị</h2>
+        <div class="grid">
+          <div class="metric">
+            <div class="label">Nhiệt độ</div>
+            <div class="value" id="temp">--</div>
+          </div>
+          <div class="metric">
+            <div class="label">Độ ẩm</div>
+            <div class="value" id="hum">--</div>
+          </div>
+          <div class="metric">
+            <div class="label">Mưa</div>
+            <div class="value" id="rain">--</div>
+          </div>
+          <div class="metric">
+            <div class="label">Cập nhật cuối</div>
+            <div class="value" id="updated">--</div>
+          </div>
+        </div>
+        <div id="staleBanner" class="banner stale">Chưa nhận dữ liệu mới / dữ liệu đã cũ</div>
+      </div>
+
+      <div class="card" style="margin-top: 24px;">
+        <h2>Điều khiển node</h2>
+        <div class="controls">
+          <input id="token" type="text" value="admin-demo" placeholder="Token" />
+          <select id="action">
+            <option value="pump_on">Bật máy bơm</option>
+            <option value="pump_off">Tắt máy bơm</option>
+            <option value="test_cycle">Kiểm tra chu kỳ</option>
+          </select>
+          <button id="sendCommand">Gửi lệnh</button>
+        </div>
+        <div id="commandState" class="badge pending">Đang chờ</div>
+        <div id="commandMessage" class="status-box">Chưa có lệnh nào.</div>
+      </div>
+
+      <div class="card" style="margin-top: 24px;">
+        <h2>Lịch sử lệnh</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>cmd_id</th>
+              <th>Hành động</th>
+              <th>Trạng thái</th>
+              <th>Lý do</th>
+            </tr>
+          </thead>
+          <tbody id="commandRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script src="/dashboard/app.js"></script>
+  </body>
+</html>
